@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: scraper_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - scraper_network
+    volumes:
+      - redis_data:/data
+
+  coordinator:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper_coordinator
+    command: python scraper.py coordinator
+    depends_on:
+      - redis
+    networks:
+      - scraper_network
+    volumes:
+      - type: bind
+        source: ./jugadores_sofascore.csv
+        target: /app/jugadores_sofascore.csv
+        read_only: true
+    environment:
+      - CONTAINER_ID=coordinator
+
+  worker1:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper_worker1
+    command: python scraper.py
+    depends_on:
+      - coordinator
+    networks:
+      - scraper_network
+    environment:
+      - CONTAINER_ID=worker1
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  worker2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper_worker2
+    command: python scraper.py
+    depends_on:
+      - coordinator
+    networks:
+      - scraper_network
+    environment:
+      - CONTAINER_ID=worker2
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  worker3:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper_worker3
+    command: python scraper.py
+    depends_on:
+      - coordinator
+    networks:
+      - scraper_network
+    environment:
+      - CONTAINER_ID=worker3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  worker4:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper_worker4
+    command: python scraper.py
+    depends_on:
+      - coordinator
+    networks:
+      - scraper_network
+    environment:
+      - CONTAINER_ID=worker4
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  results_collector:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper_collector
+    command: python collect_results.py
+    depends_on:
+      - redis
+    networks:
+      - scraper_network
+    volumes:
+      - type: bind
+        source: ./results
+        target: /app/results
+    environment:
+      - CONTAINER_ID=collector
+
+networks:
+  scraper_network:
+    driver: bridge
+
+volumes:
+  redis_data:
