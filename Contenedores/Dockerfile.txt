@@ -1,0 +1,37 @@
+# Usar una imagen base de Python con Chrome ya instalado
+FROM selenium/standalone-chrome:latest
+
+# Cambiar a root para instalar paquetes
+USER root
+
+# Actualizar el sistema e instalar dependencias
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de requisitos (crea este archivo primero)
+COPY requirements.txt .
+
+# Instalar dependencias de Python
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copiar el código de la aplicación
+COPY . .
+
+# Crear directorio para datos de salida
+RUN mkdir -p /app/data
+
+# Configurar variables de entorno
+ENV PYTHONPATH=/app
+ENV DISPLAY=:99
+
+# Exponer puerto si necesitas una API web (opcional)
+EXPOSE 8000
+
+# Comando por defecto
+CMD ["python3", "main.py"]
